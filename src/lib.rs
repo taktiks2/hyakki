@@ -5,21 +5,20 @@ pub mod world;
 
 pub use game::Game;
 
-use std::io;
-
+use anyhow::Result;
 use crossterm::event::{self, Event, KeyEventKind};
 use ratatui::DefaultTerminal;
 
 use ui::{Action, handle_key, render};
 
-pub fn run() -> io::Result<()> {
+pub fn run() -> Result<()> {
     let mut terminal = ratatui::init();
     let result = run_game_loop(&mut terminal);
     ratatui::restore();
     result
 }
 
-fn run_game_loop(terminal: &mut DefaultTerminal) -> io::Result<()> {
+fn run_game_loop(terminal: &mut DefaultTerminal) -> Result<()> {
     let mut game = Game::new();
 
     while game.running {
