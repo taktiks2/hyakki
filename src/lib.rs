@@ -37,6 +37,7 @@ fn run_game_loop(terminal: &mut DefaultTerminal) -> Result<()> {
         match event::read()? {
             Event::Key(key) if key.kind == KeyEventKind::Press => match handle_key(key) {
                 Action::Move { dx, dy } => game.try_move_player(dx, dy),
+                Action::Descend => game.try_descend(),
                 Action::Quit => game.quit(),
                 Action::None => {}
             },
