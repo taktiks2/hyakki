@@ -1,0 +1,40 @@
+name: CI
+
+on:
+  push:
+    branches-ignore:
+      - main
+  workflow_dispatch:
+
+env:
+  # CIでのログが見やすくなる
+  CARGO_TERM_COLOR: always
+
+jobs:
+  ci:
+    name: CI チェック
+    runs-on: ubuntu-latest
+    if: |
+      github.event_name == 'workflow_dispatch' ||
+      github.run_attempt > 1 ||
+      (github.event_name == 'push' && contains(github.event.head_commit.message, '[run ci]'))
+    steps:
+      - name: チェックアウト
+        uses: actions/checkout@v6
+
+      - name: Rust ツールチェーンのセットアップ
+        uses: actions-rust-lang/setup-rust-toolchain@v1
+        with:
+          components: clippy, rustfmt
+
+      - name: フォーマット確認
+        run: cargo fmt --all -- --check
+
+      - name: コードチェック (Clippy)
+        run: cargo clippy --all-targets --all-features -- -D warnings
+
+      - name: テスト実行
+        run: cargo test --verbose
+
+      - name: リリースビルド
+        run: cargo build --release --verbose
