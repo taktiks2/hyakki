@@ -14,7 +14,7 @@ pub fn render(frame: &mut Frame, game: &Game) {
         for x in 0..game.dungeon.width {
             let (ch, style) =
                 if game.player.position.x as usize == x && game.player.position.y as usize == y {
-                    ('@', Style::default().fg(Color::Yellow))
+                    (game.player.to_char(), Style::default().fg(Color::Yellow))
                 } else {
                     let tile = game.dungeon.tiles[y][x];
                     let ch = tile.to_char();
