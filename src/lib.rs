@@ -10,11 +10,22 @@ use crossterm::event::{self, Event, KeyEventKind};
 use ratatui::DefaultTerminal;
 use ui::{Action, handle_key, render};
 
+/// RAII guard to ensure terminal restoration on drop (including panics)
+struct TerminalGuard {
+    terminal: DefaultTerminal,
+}
+
+impl Drop for TerminalGuard {
+    fn drop(&mut self) {
+        ratatui::restore();
+    }
+}
+
 pub fn run() -> Result<()> {
-    let mut terminal = ratatui::init();
-    let result = run_game_loop(&mut terminal);
-    ratatui::restore();
-    result
+    let mut guard = TerminalGuard {
+        terminal: ratatui::init(),
+    };
+    run_game_loop(&mut guard.terminal)
 }
 
 fn run_game_loop(terminal: &mut DefaultTerminal) -> Result<()> {
@@ -23,14 +34,16 @@ fn run_game_loop(terminal: &mut DefaultTerminal) -> Result<()> {
     while game.running {
         terminal.draw(|frame| render(frame, &game))?;
 
-        if let Event::Key(key) = event::read()?
-            && key.kind == KeyEventKind::Press
-        {
-            match handle_key(key) {
+        match event::read()? {
+            Event::Key(key) if key.kind == KeyEventKind::Press => match handle_key(key) {
                 Action::Move { dx, dy } => game.try_move_player(dx, dy),
                 Action::Quit => game.quit(),
                 Action::None => {}
+            },
+            Event::Resize(_, _) => {
+                // Terminal resized, the next draw will handle it automatically
             }
+            _ => {}
         }
     }
 

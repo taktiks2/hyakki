@@ -3,6 +3,16 @@ use crate::{entity::position::Position, world::tile::TileType};
 pub const DUNGEON_WIDTH: usize = 80;
 pub const DUNGEON_HEIGHT: usize = 50;
 
+// Fixed test room constants (Phase 1)
+const ROOM_Y_START: usize = 20;
+const ROOM_Y_END: usize = 30;
+const ROOM_X_START: usize = 35;
+const ROOM_X_END: usize = 45;
+
+/// Center of the fixed test room (for player spawn)
+pub const ROOM_CENTER_X: i32 = (ROOM_X_START + ROOM_X_END) as i32 / 2;
+pub const ROOM_CENTER_Y: i32 = (ROOM_Y_START + ROOM_Y_END) as i32 / 2;
+
 pub struct Dungeon {
     pub tiles: Vec<Vec<TileType>>,
     pub width: usize,
@@ -14,9 +24,9 @@ impl Dungeon {
     pub fn new_fixed() -> Self {
         let mut tiles = vec![vec![TileType::Wall; DUNGEON_WIDTH]; DUNGEON_HEIGHT];
 
-        // Create a room in the center (10x10)
-        for row in tiles.iter_mut().take(30).skip(20) {
-            for tile in row.iter_mut().take(45).skip(35) {
+        // Create a 10x10 room (rows 20-29, columns 35-44)
+        for row in tiles.iter_mut().take(ROOM_Y_END).skip(ROOM_Y_START) {
+            for tile in row.iter_mut().take(ROOM_X_END).skip(ROOM_X_START) {
                 *tile = TileType::Floor;
             }
         }
@@ -29,15 +39,9 @@ impl Dungeon {
     }
 
     pub fn get_tile(&self, pos: Position) -> Option<TileType> {
-        if pos.x < 0 || pos.y < 0 {
-            return None;
-        }
-        let x = pos.x as usize;
-        let y = pos.y as usize;
-        if x >= self.width || y >= self.height {
-            return None;
-        }
-        Some(self.tiles[y][x])
+        let x: usize = pos.x.try_into().ok()?;
+        let y: usize = pos.y.try_into().ok()?;
+        self.tiles.get(y).and_then(|row| row.get(x)).copied()
     }
 
     pub fn is_walkable(&self, pos: Position) -> bool {

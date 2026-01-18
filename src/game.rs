@@ -2,7 +2,7 @@ pub mod state;
 
 use crate::{
     entity::{player::Player, position::Position},
-    world::dungeon::Dungeon,
+    world::dungeon::{Dungeon, ROOM_CENTER_X, ROOM_CENTER_Y},
 };
 use state::GameState;
 
@@ -17,7 +17,10 @@ impl Game {
     pub fn new() -> Self {
         let dungeon = Dungeon::new_fixed();
         // Place player in the center of the room
-        let player = Player::new(Position { x: 40, y: 25 });
+        let player = Player::new(Position {
+            x: ROOM_CENTER_X,
+            y: ROOM_CENTER_Y,
+        });
 
         Game {
             state: GameState::default(),
@@ -28,10 +31,7 @@ impl Game {
     }
 
     pub fn try_move_player(&mut self, dx: i32, dy: i32) {
-        let new_pos = Position {
-            x: self.player.position.x + dx,
-            y: self.player.position.y + dy,
-        };
+        let new_pos = self.player.position.translate(dx, dy);
 
         if self.dungeon.is_walkable(new_pos) {
             self.player.position = new_pos;
@@ -56,14 +56,16 @@ mod tests {
     #[test]
     fn test_player_movement_valid() {
         let mut game = Game::new();
-        // Player is at center of room (40, 25)
-        game.player.position = Position { x: 40, y: 25 };
+        // Player starts at center of room (ROOM_CENTER_X, ROOM_CENTER_Y)
 
         // Move right (on Floor)
-        let new_pos = Position { x: 41, y: 25 };
+        let new_pos = Position {
+            x: ROOM_CENTER_X + 1,
+            y: ROOM_CENTER_Y,
+        };
         assert!(game.dungeon.is_walkable(new_pos));
         game.try_move_player(1, 0);
-        assert_eq!(game.player.position, Position { x: 41, y: 25 });
+        assert_eq!(game.player.position, new_pos);
     }
 
     #[test]

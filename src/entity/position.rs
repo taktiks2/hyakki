@@ -4,6 +4,15 @@ pub struct Position {
     pub y: i32,
 }
 
+impl Position {
+    pub fn translate(self, dx: i32, dy: i32) -> Self {
+        Self {
+            x: self.x + dx,
+            y: self.y + dy,
+        }
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -22,5 +31,15 @@ mod tests {
         let pos3 = Position { x: 3, y: 4 };
         assert_eq!(pos1, pos2);
         assert_ne!(pos1, pos3);
+    }
+
+    #[test]
+    fn test_position_translate() {
+        let pos = Position { x: 5, y: 10 };
+        assert_eq!(pos.translate(1, 0), Position { x: 6, y: 10 });
+        assert_eq!(pos.translate(-1, 0), Position { x: 4, y: 10 });
+        assert_eq!(pos.translate(0, 1), Position { x: 5, y: 11 });
+        assert_eq!(pos.translate(0, -1), Position { x: 5, y: 9 });
+        assert_eq!(pos.translate(3, -2), Position { x: 8, y: 8 });
     }
 }

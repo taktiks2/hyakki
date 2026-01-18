@@ -6,4 +6,4 @@ edition = "2024"
 [dependencies]
 anyhow = "1.0"
 ratatui = "0.30.0"
-crossterm = "0.28"
+crossterm = "0.29"
