@@ -8,7 +8,6 @@ pub use game::Game;
 use anyhow::Result;
 use crossterm::event::{self, Event, KeyEventKind};
 use ratatui::DefaultTerminal;
-
 use ui::{Action, handle_key, render};
 
 pub fn run() -> Result<()> {

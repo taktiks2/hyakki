@@ -1,8 +1,9 @@
 pub mod state;
 
-use crate::entity::player::Player;
-use crate::entity::position::Position;
-use crate::world::dungeon::Dungeon;
+use crate::{
+    entity::{player::Player, position::Position},
+    world::dungeon::Dungeon,
+};
 use state::GameState;
 
 pub struct Game {

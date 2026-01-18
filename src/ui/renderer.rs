@@ -1,12 +1,10 @@
+use crate::{game::Game, world::tile::TileType};
 use ratatui::{
     Frame,
     style::{Color, Style},
     text::{Line, Span},
     widgets::{Block, Borders, Paragraph},
 };
-
-use crate::game::Game;
-use crate::world::tile::TileType;
 
 pub fn render(frame: &mut Frame, game: &Game) {
     let mut lines: Vec<Line> = Vec::new();

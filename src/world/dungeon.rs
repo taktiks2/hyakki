@@ -1,5 +1,4 @@
-use crate::entity::position::Position;
-use crate::world::tile::TileType;
+use crate::{entity::position::Position, world::tile::TileType};
 
 pub const DUNGEON_WIDTH: usize = 80;
 pub const DUNGEON_HEIGHT: usize = 50;
