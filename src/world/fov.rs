@@ -17,6 +17,19 @@ pub struct Fov {
     radius: i32,
 }
 
+/// Octant multipliers for shadowcasting
+/// Each row represents one octant's transformation: [xx, xy, yx, yy]
+const OCTANT_MULTIPLIERS: [[i32; 4]; 8] = [
+    [1, 0, 0, 1],
+    [0, 1, 1, 0],
+    [0, -1, 1, 0],
+    [-1, 0, 0, 1],
+    [-1, 0, 0, -1],
+    [0, -1, -1, 0],
+    [0, 1, -1, 0],
+    [1, 0, 0, -1],
+];
+
 impl Fov {
     /// Creates a new FOV with the given radius
     pub fn new(radius: i32) -> Self {
@@ -27,10 +40,23 @@ impl Fov {
         }
     }
 
-    /// Calculates visible tiles from the given origin
-    pub fn calculate(&mut self, _origin: Position, _dungeon: &Dungeon) {
-        // TODO: Implement shadowcasting
+    /// Calculates visible tiles from the given origin using recursive shadowcasting
+    pub fn calculate(&mut self, origin: Position, dungeon: &Dungeon) {
         self.visible.clear();
+
+        // Origin is always visible
+        self.mark_visible(origin.x, origin.y);
+
+        // Cast light in all 8 octants
+        for octant in 0..8 {
+            self.cast_light(dungeon, origin.x, origin.y, 1, 1.0, 0.0, octant);
+        }
+    }
+
+    /// Marks a tile as visible and explored
+    fn mark_visible(&mut self, x: i32, y: i32) {
+        self.visible.insert((x, y));
+        self.explored.insert((x, y));
     }
 
     /// Returns true if the position is currently visible
@@ -46,6 +72,75 @@ impl Fov {
     /// Returns the number of currently visible tiles (for testing)
     pub fn visible_count(&self) -> usize {
         self.visible.len()
+    }
+
+    /// Recursive shadowcasting for one octant
+    fn cast_light(
+        &mut self,
+        dungeon: &Dungeon,
+        cx: i32,
+        cy: i32,
+        row: i32,
+        mut start_slope: f64,
+        end_slope: f64,
+        octant: usize,
+    ) {
+        if start_slope < end_slope {
+            return;
+        }
+
+        let [xx, xy, yx, yy] = OCTANT_MULTIPLIERS[octant];
+        let mut blocked = false;
+        let mut next_start_slope = start_slope;
+
+        for j in row..=self.radius {
+            if blocked {
+                return;
+            }
+
+            for dx in -j..=0 {
+                let dy = -j;
+
+                // Transform octant coordinates to map coordinates
+                let map_x = cx + dx * xx + dy * xy;
+                let map_y = cy + dx * yx + dy * yy;
+
+                // Calculate slopes for this cell
+                let l_slope = (dx as f64 - 0.5) / (dy as f64 + 0.5);
+                let r_slope = (dx as f64 + 0.5) / (dy as f64 - 0.5);
+
+                if start_slope < r_slope {
+                    continue;
+                }
+                if end_slope > l_slope {
+                    break;
+                }
+
+                // Check if within radius (using squared distance for efficiency)
+                let dist_sq = dx * dx + dy * dy;
+                if dist_sq <= self.radius * self.radius {
+                    self.mark_visible(map_x, map_y);
+                }
+
+                // Check if tile blocks light
+                let tile_blocks = !dungeon.is_transparent(Position { x: map_x, y: map_y });
+
+                if blocked {
+                    // We're scanning a row of blocked tiles
+                    if tile_blocks {
+                        next_start_slope = r_slope;
+                    } else {
+                        blocked = false;
+                        start_slope = next_start_slope;
+                    }
+                } else if tile_blocks && j < self.radius {
+                    // Found a blocker, start a child scan
+                    blocked = true;
+                    self.cast_light(dungeon, cx, cy, j + 1, start_slope, l_slope, octant);
+                    next_start_slope = r_slope;
+                }
+            }
+        }
     }
 }
 
