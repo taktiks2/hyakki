@@ -1,4 +1,4 @@
-use crate::{game::Game, world::tile::TileType};
+use crate::{entity::position::Position, game::Game, world::tile::TileType};
 use ratatui::{
     Frame,
     style::{Color, Style},
@@ -13,21 +13,35 @@ pub fn render(frame: &mut Frame, game: &Game) {
     for y in 0..game.dungeon.height {
         let mut spans: Vec<Span> = Vec::new();
         for x in 0..game.dungeon.width {
+            let pos = Position {
+                x: x as i32,
+                y: y as i32,
+            };
             let px = game.player.position.x;
             let py = game.player.position.y;
             let is_player_here = px >= 0 && py >= 0 && px as usize == x && py as usize == y;
 
             let (ch, style) = if is_player_here {
+                // Player is always visible (yellow @)
                 (game.player.to_char(), Style::default().fg(Color::Yellow))
-            } else {
+            } else if game.fov.is_visible(pos) {
+                // Visible tiles (bright colors)
                 let tile = game.dungeon.tiles[y][x];
                 let ch = tile.to_char();
                 let color = match tile {
-                    TileType::Wall => Color::Gray,
-                    TileType::Floor => Color::DarkGray,
+                    TileType::Wall => Color::White,
+                    TileType::Floor => Color::Gray,
                     TileType::StairsDown => Color::Cyan,
                 };
                 (ch, Style::default().fg(color))
+            } else if game.fov.is_explored(pos) {
+                // Explored but not visible (dark colors)
+                let tile = game.dungeon.tiles[y][x];
+                let ch = tile.to_char();
+                (ch, Style::default().fg(Color::DarkGray))
+            } else {
+                // Unexplored (blank)
+                (' ', Style::default())
             };
             // Use stack-allocated buffer to avoid heap allocation
             let s = ch.encode_utf8(&mut char_buf);
