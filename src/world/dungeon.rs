@@ -68,13 +68,13 @@ impl Dungeon {
         let mut tiles = vec![vec![TileType::Wall; DUNGEON_WIDTH]; DUNGEON_HEIGHT];
         let mut rooms = Vec::new();
 
-        // Determine target number of rooms
-        let target_rooms = rng.gen_range(MIN_ROOMS..=MAX_ROOMS);
+        // Determine desired number of rooms (may not be reached due to MAX_ATTEMPTS)
+        let desired_room_count = rng.gen_range(MIN_ROOMS..=MAX_ROOMS);
         let mut attempts = 0;
         const MAX_ATTEMPTS: usize = 200;
 
         // Try to place rooms
-        while rooms.len() < target_rooms && attempts < MAX_ATTEMPTS {
+        while rooms.len() < desired_room_count && attempts < MAX_ATTEMPTS {
             let width = rng.gen_range(MIN_ROOM_SIZE..=MAX_ROOM_SIZE);
             let height = rng.gen_range(MIN_ROOM_SIZE..=MAX_ROOM_SIZE);
             let x = rng.gen_range(1..(DUNGEON_WIDTH as i32 - width - 1));
@@ -103,14 +103,15 @@ impl Dungeon {
         }
 
         // Determine player start and stairs positions
+        // Panic if no rooms were generated - this indicates a bug in the generation algorithm
         let player_start = rooms
             .first()
             .map(|r| r.center())
-            .unwrap_or(Position { x: 1, y: 1 });
+            .expect("Dungeon generation failed: no rooms were placed");
         let stairs_position = rooms
             .last()
             .map(|r| r.center())
-            .unwrap_or(Position { x: 1, y: 1 });
+            .expect("Dungeon generation failed: no rooms were placed");
 
         // Place stairs
         tiles[stairs_position.y as usize][stairs_position.x as usize] = TileType::StairsDown;
@@ -158,6 +159,12 @@ impl Dungeon {
 
     /// Carves an L-shaped corridor between two points
     ///
+    /// # Arguments
+    /// * `tiles` - The dungeon tile grid to modify
+    /// * `start` - Starting position (typically center of previous room)
+    /// * `end` - Ending position (typically center of new room)
+    /// * `rng` - Random number generator for choosing corridor direction
+    ///
     /// # Why generic `R: Rng` instead of concrete type like `ThreadRng`?
     ///
     /// - Production: uses `rand::thread_rng()` (ThreadRng)
@@ -181,7 +188,12 @@ impl Dungeon {
         }
     }
 
-    /// Carves a horizontal tunnel
+    /// Carves a horizontal tunnel at fixed Y coordinate
+    ///
+    /// # Arguments
+    /// * `tiles` - The dungeon tile grid to modify
+    /// * `x1`, `x2` - X coordinates to connect (order doesn't matter)
+    /// * `y` - Fixed Y coordinate for the tunnel
     fn carve_horizontal_tunnel(tiles: &mut [Vec<TileType>], x1: i32, x2: i32, y: i32) {
         let (min_x, max_x) = if x1 < x2 { (x1, x2) } else { (x2, x1) };
         for x in min_x..=max_x {
@@ -189,7 +201,12 @@ impl Dungeon {
         }
     }
 
-    /// Carves a vertical tunnel
+    /// Carves a vertical tunnel at fixed X coordinate
+    ///
+    /// # Arguments
+    /// * `tiles` - The dungeon tile grid to modify
+    /// * `y1`, `y2` - Y coordinates to connect (order doesn't matter)
+    /// * `x` - Fixed X coordinate for the tunnel
     fn carve_vertical_tunnel(tiles: &mut [Vec<TileType>], y1: i32, y2: i32, x: i32) {
         let (min_y, max_y) = if y1 < y2 { (y1, y2) } else { (y2, y1) };
         for y in min_y..=max_y {

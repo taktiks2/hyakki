@@ -99,9 +99,9 @@ mod tests {
         let wall_pos = Position { x: 0, y: 0 };
         assert!(!game.dungeon.is_walkable(wall_pos));
 
-        // Try to move into the wall
-        game.try_move_player(-1, -1);
-        // Position should not change (diagonal move not supported, but blocked anyway)
+        // Try to move into the wall (left)
+        game.try_move_player(-1, 0);
+        // Position should not change
         assert_eq!(game.player.position, wall_adjacent);
     }
 
@@ -151,8 +151,6 @@ mod tests {
 
     #[test]
     fn test_cannot_descend_past_max_depth() {
-        use crate::game::config::MAX_DEPTH;
-
         let mut game = Game::new();
         // Set dungeon to max depth
         game.dungeon = Dungeon::new_random(MAX_DEPTH);
