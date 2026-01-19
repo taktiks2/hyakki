@@ -10,3 +10,6 @@ pub const MAX_ROOM_SIZE: i32 = 10;
 
 /// Dungeon depth
 pub const MAX_DEPTH: u32 = 10;
+
+/// Field of View radius
+pub const FOV_RADIUS: i32 = 8;

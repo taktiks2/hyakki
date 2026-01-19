@@ -3,9 +3,9 @@ pub mod state;
 
 use crate::{
     entity::player::Player,
-    world::{dungeon::Dungeon, tile::TileType},
+    world::{dungeon::Dungeon, fov::Fov, tile::TileType},
 };
-use config::MAX_DEPTH;
+use config::{FOV_RADIUS, MAX_DEPTH};
 use state::GameState;
 
 pub struct Game {
@@ -13,18 +13,22 @@ pub struct Game {
     pub dungeon: Dungeon,
     pub player: Player,
     pub running: bool,
+    pub fov: Fov,
 }
 
 impl Game {
     pub fn new() -> Self {
         let dungeon = Dungeon::new_random(1);
         let player = Player::new(dungeon.player_start);
+        let mut fov = Fov::new(FOV_RADIUS);
+        fov.calculate(player.position, &dungeon);
 
         Game {
             state: GameState::default(),
             dungeon,
             player,
             running: true,
+            fov,
         }
     }
 
@@ -33,6 +37,7 @@ impl Game {
 
         if self.dungeon.is_walkable(new_pos) {
             self.player.position = new_pos;
+            self.fov.calculate(self.player.position, &self.dungeon);
         }
     }
 
@@ -48,6 +53,8 @@ impl Game {
             if new_depth <= MAX_DEPTH {
                 self.dungeon = Dungeon::new_random(new_depth);
                 self.player.position = self.dungeon.player_start;
+                self.fov = Fov::new(FOV_RADIUS);
+                self.fov.calculate(self.player.position, &self.dungeon);
             }
         }
     }
