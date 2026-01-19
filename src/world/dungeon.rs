@@ -223,6 +223,13 @@ impl Dungeon {
     pub fn is_walkable(&self, pos: Position) -> bool {
         self.get_tile(pos).is_some_and(|t| t.is_walkable())
     }
+
+    /// Returns true if the tile at the position allows light to pass through.
+    /// Walls block light, while floors and stairs are transparent.
+    pub fn is_transparent(&self, pos: Position) -> bool {
+        self.get_tile(pos)
+            .is_some_and(|t| matches!(t, TileType::Floor | TileType::StairsDown))
+    }
 }
 
 #[cfg(test)]
@@ -415,6 +422,46 @@ mod tests {
         assert!(
             dungeon.is_walkable(dungeon.stairs_position),
             "Stairs position should be walkable"
+        );
+    }
+
+    // ===== Transparency tests (Phase 3 - FOV) =====
+
+    #[test]
+    fn test_wall_not_transparent() {
+        let dungeon = Dungeon::new_fixed();
+        // Corner (0,0) is always a wall
+        assert!(
+            !dungeon.is_transparent(Position { x: 0, y: 0 }),
+            "Wall should not be transparent"
+        );
+    }
+
+    #[test]
+    fn test_floor_transparent() {
+        let dungeon = Dungeon::new_fixed();
+        // Player start is always floor
+        assert!(
+            dungeon.is_transparent(dungeon.player_start),
+            "Floor should be transparent"
+        );
+    }
+
+    #[test]
+    fn test_stairs_transparent() {
+        let dungeon = Dungeon::new_random(1);
+        assert!(
+            dungeon.is_transparent(dungeon.stairs_position),
+            "Stairs should be transparent"
+        );
+    }
+
+    #[test]
+    fn test_outside_bounds_not_transparent() {
+        let dungeon = Dungeon::new_fixed();
+        assert!(
+            !dungeon.is_transparent(Position { x: -1, y: 0 }),
+            "Outside bounds should not be transparent"
         );
     }
 }
